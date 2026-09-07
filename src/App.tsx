@@ -481,6 +481,7 @@ function CadastroScreen({ go }: { go: (s: Screen) => void }) {
     setError("");
     try {
       const credential = await createUserWithEmailAndPassword(auth, email.trim(), senha);
+      await updateProfile(credential.user, { displayName: nome.trim() });
       await set(dataRef(`usuarios/${credential.user.uid}`), { nome: nome.trim(), email: email.trim(), disciplinas: sel });
       go("home");
     } catch (error) {
@@ -1423,20 +1424,23 @@ function EscolasScreen({ escolas, turmas, go, onAdd }: {
 
 // ── PERFIL ────────────────────────────────────────────────────────────
 function PerfilScreen({ go, user, onLogout, onSaveProfile }: {
-  go: (s: Screen) => void; user: User; onLogout: () => void; onSaveProfile: (nome: string) => Promise<void>;
+  go: (s: Screen) => void; user: User; disciplinasSalvas: string[]; onLogout: () => void;
+  onSaveProfile: (nome: string, disciplinas: string[]) => Promise<void>;
 }) {
+  const disciplinasDisponiveis = ["Biologia", "Matemática", "Português", "História", "Geografia", "Física", "Química", "Informática", "Zootecnia", "Agronegócio", "Ed. Física"];
   const [dark, setDark] = useState(false);
   const [notifs, setNotifs] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [nome, setNome] = useState(user.displayName || "");
   const [novaSenha, setNovaSenha] = useState("");
+  const [disciplinas, setDisciplinas] = useState(disciplinasSalvas);
   const [feedback, setFeedback] = useState("");
 
   async function saveProfile() {
     if (!nome.trim()) { setFeedback("Informe seu nome."); return; }
     try {
-      await onSaveProfile(nome.trim());
+      await onSaveProfile(nome.trim(), disciplinas);
       setFeedback("Dados pessoais atualizados.");
       setShowEdit(false);
     } catch {
@@ -1470,9 +1474,10 @@ function PerfilScreen({ go, user, onLogout, onSaveProfile }: {
                 <h3 className="font-700 text-[#1A2340] truncate" style={{ fontFamily: "Outfit" }}>{user.displayName || "Meu perfil"}</h3>
                 <p className="text-xs sm:text-sm text-[#6B7A9A] truncate">{user.email}</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
-                  {["Biologia", "Zootecnia"].map((d) => (
+                  {disciplinas.map((d) => (
                     <span key={d} className="text-xs px-2 py-0.5 bg-[#EBF2FF] text-[#1A6FE0] rounded-full font-500">{d}</span>
                   ))}
+                  {!disciplinas.length && <span className="text-xs text-[#6B7A9A]">Nenhuma disciplina cadastrada</span>}
                 </div>
               </div>
             </div>
@@ -1493,6 +1498,18 @@ function PerfilScreen({ go, user, onLogout, onSaveProfile }: {
             {showEdit ? <>
               <Field label="Nome completo"><input value={nome} onChange={(event) => setNome(event.target.value)} className={fieldCls(false)} /></Field>
               <p className="text-xs text-[#6B7A9A]">E-mail: {user.email}</p>
+              <Field label="Disciplinas que leciona">
+                <div className="flex flex-wrap gap-2">
+                  {disciplinasDisponiveis.map((disciplina) => {
+                    const selecionada = disciplinas.includes(disciplina);
+                    return <button type="button" key={disciplina} onClick={() => setDisciplinas((current) => selecionada ? current.filter((item) => item !== disciplina) : [...current, disciplina])}
+                      className="px-2.5 py-1.5 rounded-full text-xs font-500 border transition-colors"
+                      style={{ background: selecionada ? "#1A6FE0" : "transparent", color: selecionada ? "#fff" : "#6B7A9A", borderColor: selecionada ? "#1A6FE0" : "#E1E8F5" }}>
+                      {disciplina}
+                    </button>;
+                  })}
+                </div>
+              </Field>
               <Btn onClick={saveProfile} primary>Salvar dados</Btn>
             </> : <>
               <Field label="Nova senha"><input type="password" value={novaSenha} onChange={(event) => setNovaSenha(event.target.value)} placeholder="Mínimo 6 caracteres" className={fieldCls(false)} /></Field>
@@ -1551,6 +1568,7 @@ export default function App() {
   const [editingChamada, setEditingChamada] = useState<Chamada | null>(null);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [profile, setProfile] = useState<{ nome?: string; disciplinas?: string[] }>({});
 
   useEffect(() => onAuthStateChanged(auth, (user) => {
     setAuthUser(user);
@@ -1599,9 +1617,14 @@ export default function App() {
       setChamadas([]);
       setNotas({});
       setComposicoes({});
+      setProfile({});
       return;
     }
     const userDataRef = (path: string) => dataRef(`usuarios/${authUser.uid}/${path}`);
+    const unsubProfile = onValue(dataRef(`usuarios/${authUser.uid}`), (snapshot) => {
+      const value = snapshot.val() || {};
+      setProfile({ nome: value.nome, disciplinas: Array.isArray(value.disciplinas) ? value.disciplinas : [] });
+    });
     const unsubTurmas = onValue(userDataRef("turmas"), (snapshot) => {
       setTurmas(Object.values(snapshot.val() || {}) as Turma[]);
     });
@@ -1623,6 +1646,7 @@ export default function App() {
       unsubChamadas();
       unsubNotas();
       unsubComposicoes();
+      unsubProfile();
     };
   }, [authUser?.uid]);
 
@@ -1682,9 +1706,10 @@ export default function App() {
     setActiveTurma(null);
     navigate("/turmas");
   }
-  async function saveProfile(nome: string) {
+  async function saveProfile(nome: string, disciplinas: string[]) {
     await updateProfile(authUser!, { displayName: nome });
-    await update(dataRef(`usuarios/${authUser!.uid}`), { nome });
+    await update(dataRef(`usuarios/${authUser!.uid}`), { nome, disciplinas });
+    setProfile({ nome, disciplinas });
   }
   async function handleLogout() {
     await signOut(auth);
@@ -1719,7 +1744,7 @@ export default function App() {
         {screen === "lancamento-notas" && activeTurma && composicoes[activeTurma.id] && <LancamentoNotasScreen turma={activeTurma} go={go} notasSalvas={notas[activeTurma.id]} composicao={normalizeComposicao(composicoes[activeTurma.id])} onSave={(value) => saveNotas(activeTurma.id, value)} />}
         {(["turma-detail", "editar-turma", "chamada", "historico-chamadas", "lancamento-notas"] as Screen[]).includes(screen) && !activeTurma && <RouteFallback go={go} />}
         {screen === "escolas" && <EscolasScreen escolas={escolas} turmas={turmas} go={go} onAdd={addEscola} />}
-        {screen === "perfil" && <PerfilScreen go={go} user={authUser!} onLogout={handleLogout} onSaveProfile={saveProfile} />}
+        {screen === "perfil" && <PerfilScreen go={go} user={authUser!} disciplinasSalvas={profile.disciplinas || []} onLogout={handleLogout} onSaveProfile={saveProfile} />}
       </PageShell>
       {showNav && <BottomNav active={screen} go={go} />}
     </div>
