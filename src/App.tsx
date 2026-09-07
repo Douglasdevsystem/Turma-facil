@@ -1423,7 +1423,7 @@ function EscolasScreen({ escolas, turmas, go, onAdd }: {
 }
 
 // ── PERFIL ────────────────────────────────────────────────────────────
-function PerfilScreen({ go, user, onLogout, onSaveProfile }: {
+function PerfilScreen({ go, user, disciplinasSalvas, onLogout, onSaveProfile }: {
   go: (s: Screen) => void; user: User; disciplinasSalvas: string[]; onLogout: () => void;
   onSaveProfile: (nome: string, disciplinas: string[]) => Promise<void>;
 }) {
