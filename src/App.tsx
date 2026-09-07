@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
-import { onValue, set } from "firebase/database";
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, updateProfile, type User } from "firebase/auth";
+import { onValue, remove, set, update } from "firebase/database";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { jsPDF } from "jspdf";
@@ -14,7 +14,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 // ── Types ──────────────────────────────────────────────────────────────
 type Screen =
   | "login" | "cadastro" | "home" | "turmas" | "turma-detail"
-  | "criar-turma" | "chamada" | "historico-chamadas" | "lancamento-notas"
+  | "criar-turma" | "editar-turma" | "chamada" | "historico-chamadas" | "lancamento-notas"
   | "escolas" | "perfil";
 
 type Turno = "Manhã" | "Tarde" | "Noite";
@@ -655,9 +655,9 @@ function TurmasScreen({ turmas, go, setActiveTurma }: {
 }
 
 // ── TURMA DETAIL ──────────────────────────────────────────────────────
-function TurmaDetailScreen({ turma, chamadas, notas, composicao, go, setActiveTurma, onSaveComposicao }: {
+function TurmaDetailScreen({ turma, chamadas, notas, composicao, go, setActiveTurma, onSaveComposicao, onDelete }: {
   turma: Turma; chamadas: Chamada[]; notas: Record<number, NotaAluno>; composicao?: ComposicaoNota | Record<string, number>; go: (s: Screen) => void;
-  setActiveTurma: (t: Turma) => void; onSaveComposicao: (value: ComposicaoNota) => void;
+  setActiveTurma: (t: Turma) => void; onSaveComposicao: (value: ComposicaoNota) => void; onDelete: () => void;
 }) {
   const [tab, setTab] = useState<"alunos" | "geral" | "chamada" | "notas">("alunos");
   const [showComposition, setShowComposition] = useState(!composicao);
@@ -674,7 +674,8 @@ function TurmaDetailScreen({ turma, chamadas, notas, composicao, go, setActiveTu
 
   return (
     <div className="pb-24 md:pb-8">
-      <Header title={turma.nome} subtitle={`${turma.escola} · ${turma.disciplina}`} onBack={() => go("turmas")} />
+      <Header title={turma.nome} subtitle={`${turma.escola} · ${turma.disciplina}`} onBack={() => go("turmas")}
+        action={{ label: "Editar", onClick: () => go("editar-turma") }} />
 
       {/* Chips */}
       <div className="px-4 md:px-8 py-3 bg-white border-b border-[#E1E8F5]">
@@ -686,6 +687,7 @@ function TurmaDetailScreen({ turma, chamadas, notas, composicao, go, setActiveTu
       </div>
 
       {/* Tabs */}
+        <button onClick={onDelete} className="mt-3 text-xs font-600 text-[#E63946] hover:underline">Excluir esta turma</button>
       <div className="flex bg-white border-b border-[#E1E8F5] px-4 md:px-8 sticky top-[57px] z-30">
         {(["alunos", "geral", "chamada", "notas"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
@@ -800,6 +802,54 @@ function TurmaDetailScreen({ turma, chamadas, notas, composicao, go, setActiveTu
             <p className="text-xs text-[#6B7A9A] text-center">Bimestre {turma.bimestre} · {turma.anoLetivo}</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── EDITAR TURMA ─────────────────────────────────────────────────────
+function EditarTurmaScreen({ turma, go, onSave }: {
+  turma: Turma; go: (s: Screen) => void; onSave: (turma: Turma) => Promise<void>;
+}) {
+  const [form, setForm] = useState({
+    nome: turma.nome, escola: turma.escola, turno: turma.turno,
+    serie: turma.serie, disciplina: turma.disciplina,
+    anoLetivo: String(turma.anoLetivo), bimestre: String(turma.bimestre),
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+
+  async function save() {
+    if (!form.nome.trim()) { setError("Informe o nome da turma."); return; }
+    setLoading(true);
+    try {
+      await onSave({ ...turma, ...form, anoLetivo: Number(form.anoLetivo), bimestre: Number(form.bimestre), turno: form.turno as Turno });
+      go("turma-detail");
+    } catch {
+      setError("Não foi possível salvar as alterações.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="pb-24 md:pb-8">
+      <Header title="Editar turma" subtitle={turma.nome} onBack={() => go("turma-detail")} />
+      <div className="px-4 md:px-8 pt-5 max-w-xl">
+        <div className="bg-white border border-[#E1E8F5] rounded-2xl p-4 sm:p-5 flex flex-col gap-4">
+          <Field label="Nome da turma"><input value={form.nome} onChange={(e) => update("nome", e.target.value)} className={fieldCls(false)} /></Field>
+          <Field label="Escola"><input value={form.escola} onChange={(e) => update("escola", e.target.value)} className={fieldCls(false)} /></Field>
+          <Field label="Turno"><select value={form.turno} onChange={(e) => update("turno", e.target.value)} className={fieldCls(false)}>{["Manhã", "Tarde", "Noite"].map((turno) => <option key={turno}>{turno}</option>)}</select></Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Ano / Série"><input value={form.serie} onChange={(e) => update("serie", e.target.value)} className={fieldCls(false)} /></Field>
+            <Field label="Disciplina"><input value={form.disciplina} onChange={(e) => update("disciplina", e.target.value)} className={fieldCls(false)} /></Field>
+            <Field label="Ano letivo"><input type="number" value={form.anoLetivo} onChange={(e) => update("anoLetivo", e.target.value)} className={fieldCls(false)} /></Field>
+            <Field label="Bimestre"><select value={form.bimestre} onChange={(e) => update("bimestre", e.target.value)} className={fieldCls(false)}>{[1, 2, 3, 4].map((bimestre) => <option key={bimestre} value={bimestre}>{bimestre}º Bimestre</option>)}</select></Field>
+          </div>
+          {error && <p className="text-xs text-[#E63946]">{error}</p>}
+          <Btn onClick={save} loading={loading} primary>Salvar alterações</Btn>
+        </div>
       </div>
     </div>
   );
@@ -1372,9 +1422,39 @@ function EscolasScreen({ escolas, turmas, go, onAdd }: {
 }
 
 // ── PERFIL ────────────────────────────────────────────────────────────
-function PerfilScreen({ go, onLogout }: { go: (s: Screen) => void; onLogout: () => void }) {
+function PerfilScreen({ go, user, onLogout, onSaveProfile }: {
+  go: (s: Screen) => void; user: User; onLogout: () => void; onSaveProfile: (nome: string) => Promise<void>;
+}) {
   const [dark, setDark] = useState(false);
   const [notifs, setNotifs] = useState(true);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [nome, setNome] = useState(user.displayName || "");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  async function saveProfile() {
+    if (!nome.trim()) { setFeedback("Informe seu nome."); return; }
+    try {
+      await onSaveProfile(nome.trim());
+      setFeedback("Dados pessoais atualizados.");
+      setShowEdit(false);
+    } catch {
+      setFeedback("Não foi possível atualizar seus dados.");
+    }
+  }
+
+  async function savePassword() {
+    if (novaSenha.length < 6) { setFeedback("A nova senha precisa ter pelo menos 6 caracteres."); return; }
+    try {
+      await updatePassword(user, novaSenha);
+      setNovaSenha("");
+      setShowPassword(false);
+      setFeedback("Senha alterada com sucesso.");
+    } catch {
+      setFeedback("Por segurança, saia e entre novamente antes de trocar a senha.");
+    }
+  }
 
   return (
     <div className="pb-24 md:pb-8">
@@ -1387,8 +1467,8 @@ function PerfilScreen({ go, onLogout }: { go: (s: Screen) => void; onLogout: () 
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-800 flex-shrink-0"
                 style={{ background: "linear-gradient(135deg,#1A6FE0,#13A768)", fontFamily: "Outfit" }}>A</div>
               <div className="min-w-0">
-                <h3 className="font-700 text-[#1A2340] truncate" style={{ fontFamily: "Outfit" }}>Meu perfil</h3>
-                <p className="text-xs sm:text-sm text-[#6B7A9A] truncate">Configure seus dados</p>
+                <h3 className="font-700 text-[#1A2340] truncate" style={{ fontFamily: "Outfit" }}>{user.displayName || "Meu perfil"}</h3>
+                <p className="text-xs sm:text-sm text-[#6B7A9A] truncate">{user.email}</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {["Biologia", "Zootecnia"].map((d) => (
                     <span key={d} className="text-xs px-2 py-0.5 bg-[#EBF2FF] text-[#1A6FE0] rounded-full font-500">{d}</span>
@@ -1399,7 +1479,7 @@ function PerfilScreen({ go, onLogout }: { go: (s: Screen) => void; onLogout: () 
 
             <div className="bg-white rounded-2xl border border-[#E1E8F5] divide-y divide-[#E1E8F5]">
               {[{ label: "Editar dados pessoais" }, { label: "Trocar senha" }].map(({ label }) => (
-                <button key={label} className="w-full min-h-12 flex items-center gap-3 px-4 py-3 text-sm text-[#1A2340] hover:bg-[#F4F7FE] transition-colors">
+                <button key={label} onClick={() => { setFeedback(""); if (label.startsWith("Editar")) setShowEdit(true); else setShowPassword(true); }} className="w-full min-h-12 flex items-center gap-3 px-4 py-3 text-sm text-[#1A2340] hover:bg-[#F4F7FE] transition-colors">
                   <IcoEdit cls="w-4 h-4 text-[#6B7A9A]" />
                   <span className="flex-1 text-left">{label}</span>
                   <IcoChevron cls="w-4 h-4 text-[#6B7A9A]" />
@@ -1407,6 +1487,20 @@ function PerfilScreen({ go, onLogout }: { go: (s: Screen) => void; onLogout: () 
               ))}
             </div>
           </div>
+
+          {(showEdit || showPassword) && <div className="bg-white rounded-2xl border border-[#E1E8F5] p-4 flex flex-col gap-3">
+            <h4 className="font-700 text-[#1A2340]" style={{ fontFamily: "Outfit" }}>{showEdit ? "Editar dados pessoais" : "Trocar senha"}</h4>
+            {showEdit ? <>
+              <Field label="Nome completo"><input value={nome} onChange={(event) => setNome(event.target.value)} className={fieldCls(false)} /></Field>
+              <p className="text-xs text-[#6B7A9A]">E-mail: {user.email}</p>
+              <Btn onClick={saveProfile} primary>Salvar dados</Btn>
+            </> : <>
+              <Field label="Nova senha"><input type="password" value={novaSenha} onChange={(event) => setNovaSenha(event.target.value)} placeholder="Mínimo 6 caracteres" className={fieldCls(false)} /></Field>
+              <Btn onClick={savePassword} primary>Salvar senha</Btn>
+            </>}
+            <button onClick={() => { setShowEdit(false); setShowPassword(false); }} className="text-sm text-[#6B7A9A]">Cancelar</button>
+          </div>}
+          {feedback && <p className="text-xs text-[#1A6FE0]">{feedback}</p>}
 
           {/* Right col */}
           <div className="flex flex-col gap-4">
@@ -1474,6 +1568,7 @@ export default function App() {
     if (/^\/turmas\/\d+\/chamadas\/historico$/.test(pathname)) return "historico-chamadas";
     if (/^\/turmas\/\d+\/chamadas$/.test(pathname)) return "chamada";
     if (/^\/turmas\/\d+\/notas$/.test(pathname)) return "lancamento-notas";
+    if (/^\/turmas\/\d+\/editar$/.test(pathname)) return "editar-turma";
     if (/^\/turmas\/\d+$/.test(pathname)) return "turma-detail";
     return "turmas";
   }
@@ -1549,6 +1644,7 @@ export default function App() {
     if (s === "chamada") return `/turmas/${turmaId}/chamadas`;
     if (s === "historico-chamadas") return `/turmas/${turmaId}/chamadas/historico`;
     if (s === "lancamento-notas") return `/turmas/${turmaId}/notas`;
+    if (s === "editar-turma") return `/turmas/${turmaId}/editar`;
     return `/turmas/${turmaId}`;
   }
 
@@ -1572,6 +1668,23 @@ export default function App() {
   }
   function saveComposicao(turmaId: number, value: ComposicaoNota) {
     const target = userDataRef(`composicoes/${turmaId}`); if (target) void set(target, value);
+  }
+  async function saveTurma(turma: Turma) {
+    const target = userDataRef(`turmas/${turma.id}`);
+    if (target) await set(target, turma);
+  }
+  async function deleteTurma(turma: Turma) {
+    if (!window.confirm(`Excluir a turma "${turma.nome}"? Essa ação removerá também chamadas e notas.`)) return;
+    const paths = [`turmas/${turma.id}`, `notas/${turma.id}`, `composicoes/${turma.id}`];
+    const chamadaPaths = chamadas.filter((chamada) => chamada.turmaId === turma.id).map((chamada) => `chamadas/${chamada.id}`);
+    if (authUser) await Promise.all([...paths, ...chamadaPaths].map((path) => remove(dataRef(`usuarios/${authUser.uid}/${path}`))));
+    activeTurmaRef.current = null;
+    setActiveTurma(null);
+    navigate("/turmas");
+  }
+  async function saveProfile(nome: string) {
+    await updateProfile(authUser!, { displayName: nome });
+    await update(dataRef(`usuarios/${authUser!.uid}`), { nome });
   }
   async function handleLogout() {
     await signOut(auth);
@@ -1597,15 +1710,16 @@ export default function App() {
       <PageShell>
         {screen === "home" && <HomeScreen turmas={turmas} chamadas={chamadas} go={go} setActiveTurma={selectTurma} />}
         {screen === "turmas" && <TurmasScreen turmas={turmas} go={go} setActiveTurma={selectTurma} />}
-        {screen === "turma-detail" && activeTurma && <TurmaDetailScreen turma={activeTurma} chamadas={chamadas} notas={notas[activeTurma.id] || {}} composicao={composicoes[activeTurma.id]} go={go} setActiveTurma={selectTurma} onSaveComposicao={(value) => saveComposicao(activeTurma.id, value)} />}
+        {screen === "turma-detail" && activeTurma && <TurmaDetailScreen turma={activeTurma} chamadas={chamadas} notas={notas[activeTurma.id] || {}} composicao={composicoes[activeTurma.id]} go={go} setActiveTurma={selectTurma} onSaveComposicao={(value) => saveComposicao(activeTurma.id, value)} onDelete={() => void deleteTurma(activeTurma)} />}
         {screen === "criar-turma" && <CriarTurmaScreen escolas={escolas} go={go} onSave={addTurma} onAddEscola={addEscola} />}
+        {screen === "editar-turma" && activeTurma && <EditarTurmaScreen turma={activeTurma} go={go} onSave={saveTurma} />}
         {screen === "chamada" && activeTurma && <ChamadaScreen turma={activeTurma} chamada={editingChamada || undefined} go={go} onSave={addChamada} />}
         {screen === "historico-chamadas" && activeTurma && <HistoricoScreen turma={activeTurma} chamadas={chamadas} go={go}
           onEdit={(chamada) => { setEditingChamada(chamada); navigate(`/turmas/${activeTurma.id}/chamadas`); window.scrollTo({ top: 0 }); }} />}
         {screen === "lancamento-notas" && activeTurma && composicoes[activeTurma.id] && <LancamentoNotasScreen turma={activeTurma} go={go} notasSalvas={notas[activeTurma.id]} composicao={normalizeComposicao(composicoes[activeTurma.id])} onSave={(value) => saveNotas(activeTurma.id, value)} />}
-        {(["turma-detail", "chamada", "historico-chamadas", "lancamento-notas"] as Screen[]).includes(screen) && !activeTurma && <RouteFallback go={go} />}
+        {(["turma-detail", "editar-turma", "chamada", "historico-chamadas", "lancamento-notas"] as Screen[]).includes(screen) && !activeTurma && <RouteFallback go={go} />}
         {screen === "escolas" && <EscolasScreen escolas={escolas} turmas={turmas} go={go} onAdd={addEscola} />}
-        {screen === "perfil" && <PerfilScreen go={go} onLogout={handleLogout} />}
+        {screen === "perfil" && <PerfilScreen go={go} user={authUser!} onLogout={handleLogout} onSaveProfile={saveProfile} />}
       </PageShell>
       {showNav && <BottomNav active={screen} go={go} />}
     </div>
