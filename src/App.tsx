@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
 import { onValue, set } from "firebase/database";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { dataRef } from "./firebase";
+import { auth, dataRef } from "./firebase";
 import logoTurmaFacil from "./assets/turma-facil-brasil-logo.svg";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -363,6 +364,20 @@ function TurmaCard({ turma, onOpen, onChamada, onNotas }: {
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────────────
+function authErrorMessage(error: unknown) {
+  const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+  const messages: Record<string, string> = {
+    "auth/invalid-credential": "E-mail ou senha incorretos.",
+    "auth/invalid-email": "E-mail inválido.",
+    "auth/user-not-found": "Não existe uma conta com este e-mail.",
+    "auth/wrong-password": "Senha incorreta.",
+    "auth/email-already-in-use": "Este e-mail já está cadastrado.",
+    "auth/weak-password": "A senha precisa ter pelo menos 6 caracteres.",
+    "auth/operation-not-allowed": "Ative o login por e-mail e senha no Firebase Console.",
+  };
+  return messages[code] || "Não foi possível concluir a operação. Tente novamente.";
+}
+
 function LoginScreen({ go }: { go: (s: Screen) => void }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -377,11 +392,19 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
     else if (senha.length < 6) e.senha = "Mínimo 6 caracteres";
     return e;
   }
-  function handleLogin() {
+  async function handleLogin() {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     setLoading(true);
-    setTimeout(() => { setLoading(false); go("home"); }, 900);
+    setErrors({});
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), senha);
+      go("home");
+    } catch (error) {
+      setErrors({ form: authErrorMessage(error) });
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -426,6 +449,7 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
             </div>
             <button className="text-sm text-[#1A6FE0] font-500 self-end block ml-auto mb-5">Esqueci minha senha</button>
             <Btn onClick={handleLogin} loading={loading} primary>Entrar</Btn>
+            {errors.form && <p className="text-xs text-[#E63946] text-center mt-2">{errors.form}</p>}
             <p className="text-center text-sm text-[#6B7A9A] mt-5">
               Não tem conta?{" "}
               <button onClick={() => go("cadastro")} className="text-[#1A6FE0] font-600">Criar conta</button>
@@ -441,8 +465,30 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
 function CadastroScreen({ go }: { go: (s: Screen) => void }) {
   const disciplinas = ["Biologia","Matemática","Português","História","Geografia","Física","Química","Informática","Zootecnia","Agronegócio","Ed. Física"];
   const [sel, setSel] = useState<string[]>([]);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confirmacao, setConfirmacao] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   function toggle(d: string) { setSel((p) => p.includes(d) ? p.filter((x) => x !== d) : [...p, d]); }
+  async function handleCadastro() {
+    if (!nome.trim() || !email.trim() || senha.length < 6 || senha !== confirmacao) {
+      setError("Preencha os dados corretamente e confirme uma senha com pelo menos 6 caracteres.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, email.trim(), senha);
+      await set(dataRef(`usuarios/${credential.user.uid}`), { nome: nome.trim(), email: email.trim(), disciplinas: sel });
+      go("home");
+    } catch (error) {
+      setError(authErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -467,10 +513,10 @@ function CadastroScreen({ go }: { go: (s: Screen) => void }) {
               </button>
               <h2 className="text-2xl font-700 text-[#1A2340]" style={{ fontFamily: "Outfit" }}>Criar conta</h2>
             </div>
-            <Field label="Nome completo"><input placeholder="Ana Paula Ferreira" className={fieldCls(false)} /></Field>
-            <Field label="E-mail"><input type="email" placeholder="ana@escola.edu.br" className={fieldCls(false)} /></Field>
-            <Field label="Senha"><input type="password" placeholder="••••••••" className={fieldCls(false)} /></Field>
-            <Field label="Confirmar senha"><input type="password" placeholder="••••••••" className={fieldCls(false)} /></Field>
+            <Field label="Nome completo"><input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ana Paula Ferreira" className={fieldCls(false)} /></Field>
+            <Field label="E-mail"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ana@escola.edu.br" className={fieldCls(false)} /></Field>
+            <Field label="Senha"><input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="••••••••" className={fieldCls(false)} /></Field>
+            <Field label="Confirmar senha"><input type="password" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} placeholder="••••••••" className={fieldCls(false)} /></Field>
             <Field label="Disciplinas que leciona">
               <div className="flex flex-wrap gap-2">
                 {disciplinas.map((d) => (
@@ -482,7 +528,8 @@ function CadastroScreen({ go }: { go: (s: Screen) => void }) {
                 ))}
               </div>
             </Field>
-            <Btn onClick={() => { setLoading(true); setTimeout(() => { setLoading(false); go("home"); }, 900); }} loading={loading} primary>Cadastrar</Btn>
+            {error && <p className="text-xs text-[#E63946] text-center">{error}</p>}
+            <Btn onClick={handleCadastro} loading={loading} primary>Cadastrar</Btn>
             <p className="text-center text-sm text-[#6B7A9A]">Já tem conta? <button onClick={() => go("login")} className="text-[#1A6FE0] font-600">Entrar</button></p>
           </div>
         </div>
@@ -1325,7 +1372,7 @@ function EscolasScreen({ escolas, turmas, go, onAdd }: {
 }
 
 // ── PERFIL ────────────────────────────────────────────────────────────
-function PerfilScreen({ go }: { go: (s: Screen) => void }) {
+function PerfilScreen({ go, onLogout }: { go: (s: Screen) => void; onLogout: () => void }) {
   const [dark, setDark] = useState(false);
   const [notifs, setNotifs] = useState(true);
 
@@ -1383,7 +1430,7 @@ function PerfilScreen({ go }: { go: (s: Screen) => void }) {
               ))}
             </div>
 
-            <button onClick={() => go("login")}
+            <button onClick={onLogout}
               className="w-full py-3 rounded-xl border border-[#FEE2E2] text-[#E63946] text-sm font-600 hover:bg-[#FFF5F5] transition-colors flex items-center justify-center gap-2"
               style={{ fontFamily: "Outfit" }}>
               <IcoLogout cls="w-4 h-4" /> Sair da conta
@@ -1408,6 +1455,13 @@ export default function App() {
   const [activeTurma, setActiveTurma] = useState<Turma | null>(null);
   const activeTurmaRef = useRef<Turma | null>(null);
   const [editingChamada, setEditingChamada] = useState<Chamada | null>(null);
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => onAuthStateChanged(auth, (user) => {
+    setAuthUser(user);
+    setAuthLoading(false);
+  }), []);
 
   function routeToScreen(pathname: string): Screen {
     if (pathname === "/" || pathname === "/home") return "home";
@@ -1436,6 +1490,12 @@ export default function App() {
       }
     }
   }, [location.pathname, turmas]);
+
+  useEffect(() => {
+    const currentScreen = routeToScreen(location.pathname);
+    if (!authLoading && !authUser && !["login", "cadastro"].includes(currentScreen)) navigate("/login", { replace: true });
+    if (!authLoading && authUser && ["login", "cadastro"].includes(currentScreen)) navigate("/", { replace: true });
+  }, [authLoading, authUser, location.pathname]);
 
   useEffect(() => {
     const unsubTurmas = onValue(dataRef("turmas"), (snapshot) => {
@@ -1501,6 +1561,14 @@ export default function App() {
   function saveComposicao(turmaId: number, value: ComposicaoNota) {
     void set(dataRef(`composicoes/${turmaId}`), value);
   }
+  async function handleLogout() {
+    await signOut(auth);
+    activeTurmaRef.current = null;
+    setActiveTurma(null);
+    navigate("/login", { replace: true });
+  }
+
+  if (authLoading) return <div className="min-h-screen bg-[#F4F7FE]" />;
 
   if (isAuth) {
     return (
@@ -1525,7 +1593,7 @@ export default function App() {
         {screen === "lancamento-notas" && activeTurma && composicoes[activeTurma.id] && <LancamentoNotasScreen turma={activeTurma} go={go} notasSalvas={notas[activeTurma.id]} composicao={normalizeComposicao(composicoes[activeTurma.id])} onSave={(value) => saveNotas(activeTurma.id, value)} />}
         {(["turma-detail", "chamada", "historico-chamadas", "lancamento-notas"] as Screen[]).includes(screen) && !activeTurma && <RouteFallback go={go} />}
         {screen === "escolas" && <EscolasScreen escolas={escolas} turmas={turmas} go={go} onAdd={addEscola} />}
-        {screen === "perfil" && <PerfilScreen go={go} />}
+        {screen === "perfil" && <PerfilScreen go={go} onLogout={handleLogout} />}
       </PageShell>
       {showNav && <BottomNav active={screen} go={go} />}
     </div>
