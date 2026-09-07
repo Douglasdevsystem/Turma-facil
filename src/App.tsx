@@ -246,7 +246,7 @@ function BottomNav({ active, go }: { active: Screen; go: (s: Screen) => void }) 
 // ── Page Shell ────────────────────────────────────────────────────────
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="md:ml-56 min-h-screen">
+    <div className="md:ml-56 min-h-screen w-full overflow-x-hidden">
       {children}
     </div>
   );
@@ -534,11 +534,10 @@ function HomeScreen({ turmas, chamadas, go, setActiveTurma }: {
 
       <div className="px-4 md:px-8 -mt-4 flex flex-col gap-6">
         {/* Summary cards */}
-        <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4 max-w-2xl">
           {[
             { label: "Turmas ativas", value: turmas.length, color: "#1A6FE0", bg: "#EBF2FF" },
             { label: "Chamadas esta semana", value: semana.length, color: "#13A768", bg: "#E6F9F1" },
-            { label: "Notas pendentes", value: 2, color: "#F4A11A", bg: "#FEF3E2" },
           ].map(({ label, value, color, bg }) => (
             <div key={label} className="bg-white rounded-2xl p-3 md:p-5 shadow-sm border border-[#E1E8F5] flex flex-col items-center md:items-start gap-1 md:gap-2">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -1356,16 +1355,16 @@ function PerfilScreen({ go }: { go: (s: Screen) => void }) {
   return (
     <div className="pb-24 md:pb-8">
       <Header title="Perfil" />
-      <div className="px-4 md:px-8 pt-5">
-        <div className="max-w-2xl grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="w-full px-4 sm:px-6 md:px-8 pt-4 sm:pt-5">
+        <div className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {/* Left col */}
           <div className="flex flex-col gap-4">
-            <div className="bg-white rounded-2xl border border-[#E1E8F5] p-5 flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-800 flex-shrink-0"
+            <div className="bg-white rounded-2xl border border-[#E1E8F5] p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-800 flex-shrink-0"
                 style={{ background: "linear-gradient(135deg,#1A6FE0,#13A768)", fontFamily: "Outfit" }}>A</div>
               <div className="min-w-0">
                 <h3 className="font-700 text-[#1A2340] truncate" style={{ fontFamily: "Outfit" }}>Meu perfil</h3>
-                <p className="text-sm text-[#6B7A9A] truncate">Configure seus dados</p>
+                <p className="text-xs sm:text-sm text-[#6B7A9A] truncate">Configure seus dados</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {["Biologia", "Zootecnia"].map((d) => (
                     <span key={d} className="text-xs px-2 py-0.5 bg-[#EBF2FF] text-[#1A6FE0] rounded-full font-500">{d}</span>
@@ -1376,7 +1375,7 @@ function PerfilScreen({ go }: { go: (s: Screen) => void }) {
 
             <div className="bg-white rounded-2xl border border-[#E1E8F5] divide-y divide-[#E1E8F5]">
               {[{ label: "Editar dados pessoais" }, { label: "Trocar senha" }].map(({ label }) => (
-                <button key={label} className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-[#1A2340] hover:bg-[#F4F7FE] transition-colors">
+                <button key={label} className="w-full min-h-12 flex items-center gap-3 px-4 py-3 text-sm text-[#1A2340] hover:bg-[#F4F7FE] transition-colors">
                   <IcoEdit cls="w-4 h-4 text-[#6B7A9A]" />
                   <span className="flex-1 text-left">{label}</span>
                   <IcoChevron cls="w-4 h-4 text-[#6B7A9A]" />
@@ -1388,11 +1387,11 @@ function PerfilScreen({ go }: { go: (s: Screen) => void }) {
           {/* Right col */}
           <div className="flex flex-col gap-4">
             <div className="bg-white rounded-2xl border border-[#E1E8F5] divide-y divide-[#E1E8F5]">
-              <div className="flex items-center gap-3 px-4 py-3.5">
+              <div className="flex items-center gap-3 px-4 py-3 min-h-12">
                 <span className="flex-1 text-sm text-[#1A2340]">Notificações</span>
                 <Toggle on={notifs} onChange={setNotifs} />
               </div>
-              <div className="flex items-center gap-3 px-4 py-3.5">
+              <div className="flex items-center gap-3 px-4 py-3 min-h-12">
                 <span className="flex-1 text-sm text-[#1A2340]">Tema escuro</span>
                 <Toggle on={dark} onChange={setDark} />
               </div>
@@ -1400,7 +1399,7 @@ function PerfilScreen({ go }: { go: (s: Screen) => void }) {
 
             <div className="bg-white rounded-2xl border border-[#E1E8F5] divide-y divide-[#E1E8F5]">
               {[{ label: "Minhas escolas", screen: "escolas" as Screen }, { label: "Minhas turmas", screen: "turmas" as Screen }].map(({ label, screen }) => (
-                <button key={label} onClick={() => go(screen)} className="w-full flex items-center gap-3 px-4 py-3.5 text-sm text-[#1A6FE0] font-500 hover:bg-[#F4F7FE] transition-colors">
+                <button key={label} onClick={() => go(screen)} className="w-full min-h-12 flex items-center gap-3 px-4 py-3 text-sm text-[#1A6FE0] font-500 hover:bg-[#F4F7FE] transition-colors">
                   <span className="flex-1 text-left">{label}</span>
                   <IcoChevron cls="w-4 h-4" />
                 </button>
