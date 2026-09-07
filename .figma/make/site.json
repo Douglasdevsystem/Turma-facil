@@ -1,0 +1,10 @@
+{
+  "description": "This web application simplifies task management for teams, enabling efficient collaboration, real-time updates, and streamlined workflows to boost productivity.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-primary: #1A6FE0;
+  --color-primary-dark: #1358B8;
+  --color-primary-light: #EBF2FF;
+  --color-secondary: #13A768;
+  --color-secondary-light: #E6F9F1;
+  --color-danger: #E63946;
+  --color-warning: #F4A11A;
+  --color-bg: #F4F7FE;
+  --color-card: #FFFFFF;
+  --color-text: #1A2340;
+  --color-muted: #6B7A9A;
+  --color-border: #E1E8F5;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #F4F7FE;
+  color: #1A2340;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+/* Hide scrollbars by default */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
