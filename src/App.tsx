@@ -6,6 +6,7 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { dataRef } from "./firebase";
+import logoTurmaFacil from "./assets/turma-facil-brasil-logo.svg";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -183,11 +184,7 @@ function Sidebar({ active, go }: { active: Screen; go: (s: Screen) => void }) {
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full w-56 bg-white border-r border-[#E1E8F5] z-50 shadow-sm">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[#E1E8F5]">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg,#1A6FE0,#13A768)" }}>
-          <IcoGroup cls="w-4 h-4 text-white" />
-        </div>
-        <span className="font-800 text-[#1A2340] text-base" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</span>
+        <img src={logoTurmaFacil} alt="Turma Fácil Brasil" className="w-full h-12 object-contain object-left" />
       </div>
       {/* Nav items */}
       <nav className="flex-1 py-4 flex flex-col gap-1 px-3">
@@ -392,10 +389,7 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
       {/* Left panel — visible on desktop */}
       <div className="hidden md:flex md:w-1/2 lg:w-2/5 flex-col items-center justify-center p-12"
         style={{ background: "linear-gradient(160deg,#1A6FE0 0%,#0E4FAA 50%,#13A768 100%)" }}>
-        <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mb-6">
-          <IcoGroup cls="w-9 h-9 text-white" />
-        </div>
-        <h1 className="text-4xl font-800 text-white mb-3" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</h1>
+        <img src={logoTurmaFacil} alt="Turma Fácil Brasil" className="w-64 h-64 object-contain mb-3" />
         <p className="text-white/75 text-lg text-center max-w-xs leading-relaxed">
           Gestão digital de turmas, chamadas e notas para professores
         </p>
@@ -414,12 +408,7 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
         {/* Mobile gradient top */}
         <div className="md:hidden px-6 pt-14 pb-8"
           style={{ background: "linear-gradient(160deg,#1A6FE0,#13A768)" }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <IcoGroup cls="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-800 text-white" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</h1>
-          </div>
+          <img src={logoTurmaFacil} alt="Turma Fácil Brasil" className="w-56 h-28 object-contain object-left" />
         </div>
 
         <div className="flex-1 bg-white md:flex md:items-center md:justify-center rounded-t-3xl md:rounded-none -mt-3 md:mt-0 px-6 py-8 md:px-16 lg:px-24">
@@ -468,10 +457,7 @@ function CadastroScreen({ go }: { go: (s: Screen) => void }) {
     <div className="min-h-screen flex flex-col md:flex-row">
       <div className="hidden md:flex md:w-1/2 lg:w-2/5 flex-col items-center justify-center p-12"
         style={{ background: "linear-gradient(160deg,#1A6FE0 0%,#0E4FAA 50%,#13A768 100%)" }}>
-        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-6">
-          <IcoGroup cls="w-9 h-9 text-white" />
-        </div>
-        <h1 className="text-4xl font-800 text-white mb-3" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</h1>
+        <img src={logoTurmaFacil} alt="Turma Fácil Brasil" className="w-64 h-64 object-contain mb-3" />
         <p className="text-white/75 text-lg text-center max-w-xs">Cadastre-se gratuitamente e comece a usar hoje mesmo.</p>
       </div>
       <div className="flex-1 flex flex-col">

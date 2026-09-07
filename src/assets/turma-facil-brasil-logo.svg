@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-labelledby="title desc">
+  <title id="title">Turma Fácil Brasil</title>
+  <desc id="desc">Logo com pessoas, livro e capelo nas cores azul, verde e amarelo.</desc>
+  <g fill="none" stroke="#0B3B73" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#0B3B73" stroke="none" d="M185 128 360 42l175 86-175 86z"/>
+    <path fill="#0B3B73" stroke="none" d="M250 166h220v82H250z"/>
+    <path fill="#0B3B73" stroke="none" d="M516 119v108" stroke-width="10"/>
+    <path fill="#0B3B73" stroke="none" d="M516 228c-18 0-26 14-26 28s8 28 26 28 26-14 26-28-8-28-26-28z"/>
+    <circle fill="#0B3B73" stroke="none" cx="360" cy="250" r="62"/>
+    <circle fill="#11A94B" stroke="none" cx="235" cy="270" r="40"/>
+    <circle fill="#F9B900" stroke="none" cx="485" cy="270" r="40"/>
+    <path fill="#0B3B73" stroke="none" d="M270 390c10-66 45-101 90-101s80 35 90 101l-90 70z"/>
+    <path fill="#11A94B" stroke="none" d="M172 376c10-38 31-58 63-58 24 0 45 12 59 34l-25 47z"/>
+    <path fill="#F9B900" stroke="none" d="M548 376c-10-38-31-58-63-58-24 0-45 12-59 34l25 47z"/>
+    <path fill="#0B3B73" stroke="none" d="M112 410h496l-248 154z"/>
+    <path fill="#FFFFFF" stroke="none" d="M144 430h432L360 548z"/>
+    <path fill="#0B3B73" stroke="none" d="M70 486h580L360 630z"/>
+    <path fill="#FFFFFF" stroke="none" d="M92 505h536L360 604z"/>
+  </g>
+  <text x="360" y="674" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="800" fill="#0B3B73">turma<tspan fill="#11A94B">facil</tspan></text>
+  <text x="360" y="716" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#F9B900">BRASIL</text>
+</svg>
