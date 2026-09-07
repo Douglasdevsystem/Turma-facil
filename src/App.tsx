@@ -1498,19 +1498,28 @@ export default function App() {
   }, [authLoading, authUser, location.pathname]);
 
   useEffect(() => {
-    const unsubTurmas = onValue(dataRef("turmas"), (snapshot) => {
+    if (!authUser) {
+      setTurmas([]);
+      setEscolas([]);
+      setChamadas([]);
+      setNotas({});
+      setComposicoes({});
+      return;
+    }
+    const userDataRef = (path: string) => dataRef(`usuarios/${authUser.uid}/${path}`);
+    const unsubTurmas = onValue(userDataRef("turmas"), (snapshot) => {
       setTurmas(Object.values(snapshot.val() || {}) as Turma[]);
     });
-    const unsubEscolas = onValue(dataRef("escolas"), (snapshot) => {
+    const unsubEscolas = onValue(userDataRef("escolas"), (snapshot) => {
       setEscolas(Object.values(snapshot.val() || {}) as Escola[]);
     });
-    const unsubChamadas = onValue(dataRef("chamadas"), (snapshot) => {
+    const unsubChamadas = onValue(userDataRef("chamadas"), (snapshot) => {
       setChamadas(Object.values(snapshot.val() || {}) as Chamada[]);
     });
-    const unsubNotas = onValue(dataRef("notas"), (snapshot) => {
+    const unsubNotas = onValue(userDataRef("notas"), (snapshot) => {
       setNotas((snapshot.val() || {}) as Record<number, Record<number, NotaAluno>>);
     });
-    const unsubComposicoes = onValue(dataRef("composicoes"), (snapshot) => {
+    const unsubComposicoes = onValue(userDataRef("composicoes"), (snapshot) => {
       setComposicoes((snapshot.val() || {}) as Record<number, ComposicaoNota | Record<string, number>>);
     });
     return () => {
@@ -1520,7 +1529,7 @@ export default function App() {
       unsubNotas();
       unsubComposicoes();
     };
-  }, []);
+  }, [authUser?.uid]);
 
   const authScreens: Screen[] = ["login", "cadastro"];
   const isAuth = authScreens.includes(screen);
@@ -1552,14 +1561,17 @@ export default function App() {
     activeTurmaRef.current = turma;
     setActiveTurma(turma);
   }
-  function addTurma(t: Turma) { void set(dataRef(`turmas/${t.id}`), t); }
-  function addChamada(c: Chamada) { void set(dataRef(`chamadas/${c.id}`), c); }
-  function addEscola(e: Escola) { void set(dataRef(`escolas/${e.id}`), e); }
+  function userDataRef(path: string) {
+    return authUser ? dataRef(`usuarios/${authUser.uid}/${path}`) : null;
+  }
+  function addTurma(t: Turma) { const target = userDataRef(`turmas/${t.id}`); if (target) void set(target, t); }
+  function addChamada(c: Chamada) { const target = userDataRef(`chamadas/${c.id}`); if (target) void set(target, c); }
+  function addEscola(e: Escola) { const target = userDataRef(`escolas/${e.id}`); if (target) void set(target, e); }
   function saveNotas(turmaId: number, value: Record<number, NotaAluno>) {
-    void set(dataRef(`notas/${turmaId}`), value);
+    const target = userDataRef(`notas/${turmaId}`); if (target) void set(target, value);
   }
   function saveComposicao(turmaId: number, value: ComposicaoNota) {
-    void set(dataRef(`composicoes/${turmaId}`), value);
+    const target = userDataRef(`composicoes/${turmaId}`); if (target) void set(target, value);
   }
   async function handleLogout() {
     await signOut(auth);
