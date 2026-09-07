@@ -1,8 +1,12 @@
 {
-  "name": "figma-make-app",
+  "name": "turma-facil-brasil",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.15.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["@firebase/util", "core-js", "protobufjs"]
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

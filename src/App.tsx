@@ -187,7 +187,7 @@ function Sidebar({ active, go }: { active: Screen; go: (s: Screen) => void }) {
           style={{ background: "linear-gradient(135deg,#1A6FE0,#13A768)" }}>
           <IcoGroup cls="w-4 h-4 text-white" />
         </div>
-        <span className="font-800 text-[#1A2340] text-base" style={{ fontFamily: "Outfit" }}>TurmaFácil</span>
+        <span className="font-800 text-[#1A2340] text-base" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</span>
       </div>
       {/* Nav items */}
       <nav className="flex-1 py-4 flex flex-col gap-1 px-3">
@@ -395,7 +395,7 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
         <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mb-6">
           <IcoGroup cls="w-9 h-9 text-white" />
         </div>
-        <h1 className="text-4xl font-800 text-white mb-3" style={{ fontFamily: "Outfit" }}>TurmaFácil</h1>
+        <h1 className="text-4xl font-800 text-white mb-3" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</h1>
         <p className="text-white/75 text-lg text-center max-w-xs leading-relaxed">
           Gestão digital de turmas, chamadas e notas para professores
         </p>
@@ -418,7 +418,7 @@ function LoginScreen({ go }: { go: (s: Screen) => void }) {
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
               <IcoGroup cls="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-800 text-white" style={{ fontFamily: "Outfit" }}>TurmaFácil</h1>
+            <h1 className="text-2xl font-800 text-white" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</h1>
           </div>
         </div>
 
@@ -471,7 +471,7 @@ function CadastroScreen({ go }: { go: (s: Screen) => void }) {
         <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-6">
           <IcoGroup cls="w-9 h-9 text-white" />
         </div>
-        <h1 className="text-4xl font-800 text-white mb-3" style={{ fontFamily: "Outfit" }}>TurmaFácil</h1>
+        <h1 className="text-4xl font-800 text-white mb-3" style={{ fontFamily: "Outfit" }}>Turma Fácil Brasil</h1>
         <p className="text-white/75 text-lg text-center max-w-xs">Cadastre-se gratuitamente e comece a usar hoje mesmo.</p>
       </div>
       <div className="flex-1 flex flex-col">
@@ -529,7 +529,7 @@ function HomeScreen({ turmas, chamadas, go, setActiveTurma }: {
         <h2 className="text-2xl md:text-3xl font-700 text-white mt-1" style={{ fontFamily: "Outfit" }}>
           Olá! 👋
         </h2>
-        <p className="text-white/70 text-sm mt-1">Bem-vinda de volta ao TurmaFácil</p>
+        <p className="text-white/70 text-sm mt-1">Bem-vinda de volta ao Turma Fácil Brasil</p>
       </div>
 
       <div className="px-4 md:px-8 -mt-4 flex flex-col gap-6">

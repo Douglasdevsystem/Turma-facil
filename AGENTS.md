@@ -1,4 +1,4 @@
-# figma-make-app
+# turma-facil-brasil
 
 React + Vite + Tailwind CSS project running inside Figma Make.
 
